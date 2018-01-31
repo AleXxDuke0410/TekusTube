@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.view.View;
-import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -25,6 +24,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import co.tekus.tekustube.tekustube.NotificationGestorActivity;
 import co.tekus.tekustube.tekustube.R;
@@ -46,16 +47,18 @@ public class Notifications extends AsyncTask<URL, Void, String> {
     private static final String CONTENT_TYPE = "application/json";
     private static final String IDENTIFICATOR_AUTH = "Basic ";
     private String USER_IDENTIFICATION = "900590282";
-    private String DATE = "2018-01-28 14:31:04";
+    private String DATE;
     private SQLiteDatabase db;
     private NotificationQuery notificationQuery;
     private TekusInfoDialog infoDialog;
     private String method;
     private JSONObject objectToSend;
+    private boolean showDialogInGETMethod;
 
-    public Notifications(Context context, String method) {
+    public Notifications(Context context, String method, boolean showDialog) {
         this.context = context;
         this.method = method;
+        showDialogInGETMethod = showDialog;
     }
 
     public Notifications(Context context, String method, JSONObject objectToSend) {
@@ -66,25 +69,34 @@ public class Notifications extends AsyncTask<URL, Void, String> {
 
     @Override
     protected void onPreExecute() {
+        DATE = new SimpleDateFormat(Utils.SIMPLE_FORMAT).format(Calendar.getInstance().getTime());
+
         updateAndroidSecurityProvider((Activity) context);
 
         db = new DatabaseHelper(context).getWritableDatabase();
         notificationQuery = new NotificationQuery();
 
         infoDialog = new TekusInfoDialog(context);
+
         if (method.equals(Utils.METHOD_GET))
-            infoDialog.setTitle("Consultando notificaciones");
+            infoDialog.setTitle(context.getString(R.string.consulting_notifications));
         else if (method.equals(Utils.METHOD_POST))
-            infoDialog.setTitle("Enviando notificación");
+            infoDialog.setTitle(context.getString(R.string.sending_notification));
         else if (method.equals(Utils.METHOD_PUT))
-            infoDialog.setTitle("Actualizando notificación");
+            infoDialog.setTitle(context.getString(R.string.updating_notification));
         else if (method.equals(Utils.METHOD_DELETE))
-            infoDialog.setTitle("Eliminando notificación");
-        infoDialog.setMessage("Por favor, espera...");
+            infoDialog.setTitle(context.getString(R.string.eliminating_notifications));
+
+        infoDialog.setMessage(context.getString(R.string.please_wait));
         infoDialog.setCancelable(false);
         infoDialog.setCanceledOnTouchOutside(false);
         infoDialog.showProgressBar(true);
-        infoDialog.show();
+
+        if (method.equals(Utils.METHOD_GET)) {
+            if (showDialogInGETMethod)
+                infoDialog.show();
+        } else
+            infoDialog.show();
     }
 
     @Override
@@ -141,17 +153,28 @@ public class Notifications extends AsyncTask<URL, Void, String> {
 
                     break;
                 case Utils.METHOD_DELETE:
-                    urlConnection.setRequestMethod(Utils.METHOD_DELETE);
+                    try {
+                        NotificationQuery notificationQuery = new NotificationQuery();
+                        JSONArray arrayId = objectToSend.getJSONArray("arrayId");
+                        for (int i = 0; i < arrayId.length(); i++) {
+                            URL deleteUrl = new URL(urls[0].toString() + arrayId.get(i));
+                            urlConnection = (HttpURLConnection) deleteUrl.openConnection(/*proxy*/);
+                            urlConnection.setRequestMethod(Utils.METHOD_DELETE);
+                            urlConnection.setDoOutput(true);
+                            urlConnection.setDoInput(true);
+                            urlConnection.setRequestProperty("Content-Type", CONTENT_TYPE);
+                            urlConnection.setRequestProperty("Authorization", IDENTIFICATOR_AUTH + USER_IDENTIFICATION);
+                            urlConnection.setRequestProperty("Date", DATE);
+                            urlConnection.setConnectTimeout(20 * 1000);
+                            urlConnection.setReadTimeout(20 * 1000);
 
-                    int resCode = urlConnection.getResponseCode();
+                            int resCode = urlConnection.getResponseCode();
+                            if (resCode == HttpURLConnection.HTTP_OK || resCode == HttpURLConnection.HTTP_NO_CONTENT)
+                                notificationQuery.delete(db, (Integer) arrayId.get(i));
 
-                    if (resCode == HttpURLConnection.HTTP_OK) {
-                        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-                        String line;
-                        while ((line = reader.readLine()) != null)
-                            result.append(line);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                     break;
             }
@@ -169,22 +192,27 @@ public class Notifications extends AsyncTask<URL, Void, String> {
         switch (method) {
             case Utils.METHOD_GET:
                 try {
+                    if (s != null && s.equals(""))
+                        s = new JSONArray().toString();
                     saveLocally(db, notificationQuery, new JSONArray(s));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
-                ((NotificationGestorActivity)context).refreshLayout();
+                ((NotificationGestorActivity) context).refreshLayout();
 
-                infoDialog.setTitle(context.getString(R.string.app_name));
-                infoDialog.setMessage("Notificaciones actualizadas");
-                infoDialog.showProgressBar(false);
-                infoDialog.setPositiveButton(context.getString(R.string.txt_ok), new TekusDialogOnClick() {
-                    @Override
-                    public void onClick(View view) {
-                        db.close();
-                    }
-                });
+                if (showDialogInGETMethod) {
+                    infoDialog.setTitle(context.getString(R.string.app_name));
+                    infoDialog.setMessage(context.getString(R.string.notification_updated));
+                    infoDialog.showProgressBar(false);
+                    infoDialog.setPositiveButton(context.getString(R.string.txt_ok), new TekusDialogOnClick() {
+                        @Override
+                        public void onClick(View view) {
+                            db.close();
+                        }
+                    });
+                } /*else
+                    Toast.makeText(context, context.getString(R.string.data_update), Toast.LENGTH_SHORT).show();/**/
                 break;
             case Utils.METHOD_POST:
                 infoDialog.dismiss();
@@ -194,6 +222,7 @@ public class Notifications extends AsyncTask<URL, Void, String> {
                 break;
             case Utils.METHOD_DELETE:
                 infoDialog.dismiss();
+                ((NotificationGestorActivity) context).refreshLayout();
                 break;
         }
     }

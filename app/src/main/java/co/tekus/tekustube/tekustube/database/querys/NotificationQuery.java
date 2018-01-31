@@ -47,6 +47,11 @@ public class NotificationQuery {
         db.execSQL("DELETE FROM " + DownloadedVideo.TABLE_NOTIFICATION_NAME);
     }
 
+    public void delete(SQLiteDatabase db, int notificationId){
+        db.execSQL("DELETE FROM " + DownloadedVideo.TABLE_NOTIFICATION_NAME + " WHERE " +
+                DownloadedVideo.COLUMN_ID + "="+notificationId+";");
+    }
+
     public int getCount(SQLiteDatabase db){
         Cursor f = db.rawQuery("SELECT * FROM " + DownloadedVideo.TABLE_NOTIFICATION_NAME, null);
         int count = f.getCount();

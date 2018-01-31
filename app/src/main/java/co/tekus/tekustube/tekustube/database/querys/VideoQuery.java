@@ -43,4 +43,9 @@ public class VideoQuery {
 
         return videoList;
     }
+
+    public void delete(SQLiteDatabase db, String localDirVideo){
+        db.execSQL("DELETE FROM " + DownloadedVideo.TABLE_NAME + " WHERE " +
+                DownloadedVideo.COLUMN_DIR + "='"+localDirVideo+"';");
+    }
 }

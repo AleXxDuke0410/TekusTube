@@ -3,11 +3,9 @@ package co.tekus.tekustube.tekustube.tekusdialogs;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatButton;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 

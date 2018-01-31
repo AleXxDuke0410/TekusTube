@@ -1,18 +1,33 @@
 <resources>
     <string name="app_name">TekusTube</string>
-    <string name="action_settings">Settings</string>
     <string name="txt_description_about_test"><![CDATA[Prueba técnica, compañía <b>Tekus S.A.S.</b>
     2018<br><br>Prueba desarrollada por Edwin Duque desarrollador Android y estudiante de ingeniería
     de sistemas de la Universidad de Antioquia.]]></string>
-    <string name="no_video">Sin videos</string>
+    <string name="no_video">Sin vídeos</string>
     <string name="txt_cancel">Cancelar</string>
     <string name="txt_ok">Ok</string>
     <string name="title_activity_notification_gestor">NotificationGestorActivity</string>
     <string name="txt_notifications">Notificaciones</string>
     <string name="action_notifications">Notificaciones</string>
     <string name="no_notification">No hay\nNotificaciones</string>
-    <string name="action_delete_notifications">Eliminar notificaciones</string>
-    <string name="txt_confir_delete_notifications">¿Eliminar notificaciones?</string>
-    <string name="txt_si">Si</string>
+    <string name="confir_delete_notifications">¿Eliminar notificaciones?</string>
+    <string name="txt_yes">Si</string>
     <string name="txt_no">No</string>
+    <string name="txt_all_notifications_deleted">Ya se han eliminado todas las notificaciones.</string>
+    <string name="action_delete_notifications">Eliminar notificaciones</string>
+    <string name="notification_updated">Notificaciones actualizadas</string>
+    <string name="data_update">Datos actualizados</string>
+    <string name="consulting_notifications">Consultando notificaciones</string>
+    <string name="sending_notification">Enviando notificación</string>
+    <string name="updating_notification">Actualizando notificación</string>
+    <string name="eliminating_notifications">Eliminando notificaciones</string>
+    <string name="please_wait">Por favor, espera...</string>
+    <string name="canceled_download">La descarga del vídeo ha sido cancelada.</string>
+    <string name="cancel_download_video">¿Cancelar descarga del vídeo?</string>
+    <string name="title_activity_splash_screen">SplashScreenActivity</string>
+    <string name="technical_test">PRUEBA TÉCNICA</string>
+    <string name="tekus_sas">Tekus S.A.S.</string>
+    <string name="double_click_information">Recuerda que puedes dar \'Doble Click\' en el vídeo para abrir el Gestor de Notificaciones.</string>
+    <string name="press_again_to_exit">Presiona de nuevo para salir</string>
+    <string name="remove_video_from_device">¿Eliminar vídeo del dispositivo?</string>
 </resources>

@@ -1,20 +1,24 @@
 package co.tekus.tekustube.tekustube.video;
 
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
+import android.view.MenuItem;
 import android.view.Surface;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
+import co.tekus.tekustube.tekustube.NotificationGestorActivity;
 import co.tekus.tekustube.tekustube.R;
 import co.tekus.tekustube.tekustube.database.DatabaseHelper;
 import co.tekus.tekustube.tekustube.database.modelsoftables.DownloadedVideoContract.DownloadedVideo;
+import co.tekus.tekustube.tekustube.util.DoubleClickListener;
 
 /**
  * Created by wrmej on 28/01/2018.
@@ -29,6 +33,8 @@ public class FullScreenVideoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fullscreen_videoview);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         videoView = findViewById(R.id.videoView);
 
@@ -51,6 +57,14 @@ public class FullScreenVideoActivity extends AppCompatActivity {
 
         videoView.setVideoPath(videoPath);
 
+        // Detectar doble click y abrir el gestor de notificaciones
+        videoView.setOnTouchListener(new DoubleClickListener() {
+            @Override
+            public void onDoubleClick(View v) {
+                startActivity(new Intent(FullScreenVideoActivity.this, NotificationGestorActivity.class));
+            }
+        });
+
         mediaController = new FullScreenMediaController(this, videoView);
         mediaController.setAnchorView(videoView);
 
@@ -63,6 +77,16 @@ public class FullScreenVideoActivity extends AppCompatActivity {
             }
         });
         videoView.start();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == android.R.id.home)
+            finish();
+
+        return super.onOptionsItemSelected(item);
     }
 
     private boolean isLandScape() {

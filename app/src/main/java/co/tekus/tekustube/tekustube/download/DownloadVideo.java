@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Environment;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -38,6 +37,7 @@ import co.tekus.tekustube.tekustube.http.Notifications;
 import co.tekus.tekustube.tekustube.models.Video;
 import co.tekus.tekustube.tekustube.tekusdialogs.TekusDialogOnClick;
 import co.tekus.tekustube.tekustube.tekusdialogs.TekusDownloadDialog;
+import co.tekus.tekustube.tekustube.tekusdialogs.TekusInfoDialog;
 import co.tekus.tekustube.tekustube.util.Utils;
 
 /**
@@ -50,7 +50,7 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
     private URL url;
     private HttpsURLConnection urlConnection;
     final Timer myTimer = new Timer();
-    private final  int[] s = {0};
+    private final int[] s = {0};
 
     // TODO: CONSTRUCTOR
     public DownloadVideo(Context context) {
@@ -67,7 +67,24 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
         alert.setNeutralButton(context.getString(R.string.txt_cancel), new TekusDialogOnClick() {
             @Override
             public void onClick(View view) {
-                cancel(true);
+                TekusInfoDialog cancelQuetion = new TekusInfoDialog(context);
+                cancelQuetion.setTitle(context.getString(R.string.app_name));
+                cancelQuetion.setCancelable(false);
+                cancelQuetion.setCanceledOnTouchOutside(false);
+                cancelQuetion.setMessage(context.getString(R.string.cancel_download_video));
+                cancelQuetion.setPositiveButton(context.getString(R.string.txt_yes), new TekusDialogOnClick() {
+                    @Override
+                    public void onClick(View view) {
+                        cancel(true);
+                    }
+                });
+                cancelQuetion.setNegativeButton(context.getString(R.string.txt_no), new TekusDialogOnClick() {
+                    @Override
+                    public void onClick(View view) {
+                        alert.show();
+                    }
+                });
+                cancelQuetion.show();
             }
         });
         alert.show();
@@ -90,43 +107,50 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
 
             // Establecer conección
             urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setRequestMethod("GET");
+            urlConnection.setRequestMethod(Utils.METHOD_GET);
             urlConnection.connect();
 
             // Ruta de destino en el dispositivo
-            File SDCardRoot = Environment.getExternalStorageDirectory();
+            File SDCardRoot = new File(Environment.getExternalStorageDirectory() + File.separator +
+                    context.getString(R.string.app_name) + File.separator + Utils.FOLDER_ROUTE);
 
-            // Archivo que contendrá el contenido descargado
-            File file = new File(SDCardRoot, strings[1]);
+            boolean success = true;
+            if (!SDCardRoot.exists())       // Se crea la ruta local de almacenamiento si no existe
+                success = SDCardRoot.mkdirs();
 
-            // Objeto que permite escribir el archivo descargado en el dispositivo
-            FileOutputStream fileOutput = new FileOutputStream(file);
+            if (success) {
+                // Archivo que contendrá el contenido descargado
+                File file = new File(SDCardRoot, strings[1]);
 
-            // Leer datos que devuelve la URL
-            InputStream inputStream = urlConnection.getInputStream();
+                // Objeto que permite escribir el archivo descargado en el dispositivo
+                FileOutputStream fileOutput = new FileOutputStream(file);
 
-            // Tamaño del archivo que se desea descargar
-            long totalSize = urlConnection.getContentLength();
+                // Leer datos que devuelve la URL
+                InputStream inputStream = urlConnection.getInputStream();
 
-            // Variable utilizada pra guardar el progreso de descarga
-            long downloadedSize = 0;
+                // Tamaño del archivo que se desea descargar
+                long totalSize = urlConnection.getContentLength();
 
-            // Utilizar una variable tipo buffer y una variable para ir almacenar el tamaño temporal
-            byte[] buffer = new byte[1024];
-            int bufferLength = 0;
+                // Variable utilizada pra guardar el progreso de descarga
+                long downloadedSize = 0;
 
-            // Se comienza a recorrer el buffer y se aumenta el valor total descargado
-            while ((bufferLength = inputStream.read(buffer)) > 0) {
-                fileOutput.write(buffer, 0, bufferLength);
-                downloadedSize += bufferLength;
+                // Utilizar una variable tipo buffer y una variable para ir almacenar el tamaño temporal
+                byte[] buffer = new byte[1024];
+                int bufferLength = 0;
 
-                publishProgress(downloadedSize, totalSize);
+                // Se comienza a recorrer el buffer y se aumenta el valor total descargado
+                while ((bufferLength = inputStream.read(buffer)) > 0) {
+                    fileOutput.write(buffer, 0, bufferLength);
+                    downloadedSize += bufferLength;
+
+                    publishProgress(downloadedSize, totalSize);
+                }
+
+                // Cerrar proceso de escritura del archivo
+                fileOutput.close();
+
+                return new Video(file.getName(), file.getAbsolutePath(), Utils.TEMP_DURATION_VIDEO);
             }
-
-            // Cerrar proceso de escritura del archivo
-            fileOutput.close();
-
-            return new Video(file.getName(), file.getAbsolutePath(), "01:30");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -143,7 +167,7 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
 
     @Override
     protected void onCancelled() {
-        Toast.makeText(context, "La descarga del video ha sido cancelada.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, context.getString(R.string.canceled_download), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -156,7 +180,7 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
 
             JSONObject jsonItem = null;
             try {
-                String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                String formattedDate = new SimpleDateFormat(Utils.SIMPLE_FORMAT)
                         .format(Calendar.getInstance().getTime());
 
                 jsonItem = new JSONObject();
@@ -166,7 +190,7 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
 
                 URL urlNotification = null;
                 try {
-                    urlNotification = new URL("http://proyectos.tekus.co/Test/api/notifications/");
+                    urlNotification = new URL(Utils.API_URL);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -179,7 +203,7 @@ public class DownloadVideo extends AsyncTask<String, Long, Video> {
                 e.printStackTrace();
             }
 
-            ((MainActivity)context).refreshLayout();
+            ((MainActivity) context).refreshLayout();
         }
     }
 
